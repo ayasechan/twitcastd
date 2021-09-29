@@ -13,6 +13,7 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/cheggaaa/pb/v3"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -84,10 +85,9 @@ func download(url, output string) error {
 				wg.Done()
 				<-guard
 			}()
-			var err error
 
 			for j := 0; j < retry; j++ {
-				err = downloadSeg(joinURL(m3u8URL, f), outFiles[i])
+				err := downloadSeg(joinURL(m3u8URL, f), outFiles[i])
 				if err == nil {
 					return
 				}
@@ -110,7 +110,7 @@ func GetM3u8URL(url string) (string, error) {
 	}
 	html, err := goquery.NewDocumentFromReader(bytes.NewBuffer(content))
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "")
 	}
 	return ParseM3u8URL(html)
 }
@@ -128,13 +128,24 @@ func merge(files []string, out string) error {
 	if err != nil {
 		return err
 	}
+	defer dstFd.Close()
+
 	for _, f := range files {
-		srcFd, err := os.Open(f)
+		err = func() error {
+			srcFd, err := os.Open(f)
+			if err != nil {
+				return err
+			}
+			defer srcFd.Close()
+
+			io.Copy(dstFd, srcFd)
+			return nil
+		}()
 
 		if err != nil {
 			return err
 		}
-		io.Copy(dstFd, srcFd)
+
 	}
 	return nil
 }
