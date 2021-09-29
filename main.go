@@ -15,8 +15,8 @@ import (
 )
 
 const (
-	retry     = 10
-	conrrency = 10
+	retry       = 10
+	concurrency = 10
 )
 
 var (
@@ -59,7 +59,7 @@ func download(url, output string) error {
 	wg := sync.WaitGroup{}
 	bar := pb.StartNew(len(files))
 	outFiles := make([]string, len(files))
-	guard := make(chan struct{}, conrrency)
+	guard := make(chan struct{}, concurrency)
 
 	// download
 	for i, f := range files {
