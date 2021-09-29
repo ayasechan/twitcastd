@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net/url"
 	"os"
@@ -123,16 +124,17 @@ func downloadSeg(url, path string) error {
 }
 
 func merge(files []string, out string) error {
-	fd, err := os.Create(out)
+	dstFd, err := os.Create(out)
 	if err != nil {
 		return err
 	}
 	for _, f := range files {
-		data, err := os.ReadFile(f)
+		srcFd, err := os.Open(f)
+
 		if err != nil {
 			return err
 		}
-		fd.Write(data)
+		io.Copy(dstFd, srcFd)
 	}
 	return nil
 }
