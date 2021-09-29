@@ -6,7 +6,10 @@ download video from twitcasting
 
 # usage
 
-`twitcastd -u <url> -o output.mp4`
+
+for example download this [video](https://twitcasting.tv/ogurayui1017/movie/702488554)
+
+`twitcastd -u "https://twitcasting.tv/ogurayui1017/movie/702488554" -o output.mp4`
 
 If you need to use a proxy, please set the environment variable `HTTPS_PROXY`.
 

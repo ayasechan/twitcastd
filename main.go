@@ -94,6 +94,7 @@ func download(url, output string) error {
 			log.Fatalf("download %s error:\n%+v", joinURL(m3u8URL, f), err)
 		}(i, f)
 	}
+	wg.Wait()
 	bar.Finish()
 
 	log.Println("merge files")
