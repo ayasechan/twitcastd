@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"flag"
 	"fmt"
@@ -35,8 +36,10 @@ func main() {
 	}
 	err := download(*videoURL, *output)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("err: %+v\n", err)
+		os.Exit(-1)
 	}
+	log.Println("ok")
 }
 
 func download(url, output string) error {
@@ -59,9 +62,10 @@ func download(url, output string) error {
 	defer os.RemoveAll(tempDir)
 
 	wg := sync.WaitGroup{}
+	guard := make(chan struct{}, concurrency)
+
 	bar := pb.StartNew(len(files))
 	outFiles := make([]string, len(files))
-	guard := make(chan struct{}, concurrency)
 
 	// download
 	for i, f := range files {
@@ -95,10 +99,13 @@ func download(url, output string) error {
 			log.Fatalf("download %s error:\n%+v", joinURL(m3u8URL, f), err)
 		}(i, f)
 	}
+
 	wg.Wait()
+	close(guard)
+
 	bar.Finish()
 
-	log.Println("merge files")
+	log.Println("merge files...")
 	// merge
 	return merge(outFiles, output)
 }
@@ -120,7 +127,11 @@ func downloadSeg(url, path string) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, content, 0644)
+	err = os.WriteFile(path, content, 0644)
+	if err != nil {
+		return errors.Wrap(err, "")
+	}
+	return nil
 }
 
 func merge(files []string, out string) error {
@@ -129,6 +140,7 @@ func merge(files []string, out string) error {
 		return err
 	}
 	defer dstFd.Close()
+	bfwriter := bufio.NewWriter(dstFd)
 
 	for _, f := range files {
 		err = func() error {
@@ -138,7 +150,7 @@ func merge(files []string, out string) error {
 			}
 			defer srcFd.Close()
 
-			io.Copy(dstFd, srcFd)
+			io.Copy(bfwriter, bufio.NewReader(srcFd))
 			return nil
 		}()
 

@@ -80,3 +80,4 @@ tasks:
       - rm -rf {{.output}}
       - rm -f *.log
       - rm -rf .temp-*
+      - rm -f *.mp4
